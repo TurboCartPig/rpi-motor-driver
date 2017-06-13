@@ -1,22 +1,25 @@
 """
-Script for controlling raspberry pi motor driver
+Script for å kontrollere en raspberry pi motor driver
 
-Tested on seeedstudios' motor driver board
+Designet og testet for seeedstudios' motor driver board
 http://wiki.seeed.cc/Raspberry_Pi_Motor_Driver_Board_v1.0/
 """
 
 import sys
+
 from time import sleep
 from PyQt5.QtWidgets import QApplication, QWidget, QSlider, QAction
 from gpiozero import DigitalOutputDevice, PWMOutputDevice, OutputDeviceBadValue
 
+// Returner absolutt verdien av argumentet
 def abs(val):
     if val >= 0:
         return val
     else:
         return -val
 
-def clamp(val):
+// Normaliser verdien av argumentet
+def norm(val):
     if val >= 1.0:
         return 1
     if val <= -1.0:
@@ -25,21 +28,22 @@ def clamp(val):
         return abs(val)
 
 class Motor:
-    """Controll a singel motor"""
+    """Klasse for å kontrollere en motor"""
 
     def __init__(self, forward, backward, pwm):
+        // Disse er inn signalene til h-blokken
         self.forward = DigitalOutputDevice(forward)
         self.backward = DigitalOutputDevice(backward)
         self.pwm = PWMOutputDevice(pwm, True, 0, 1000)
 
     def speed(self, speed):
-        """Modify the speed and direction of the motor"""
+        """Justerer hastigheten og rettningen til motoren"""
 
         self.direction(speed)
-        self.pwm.value = clamp(speed)
+        self.pwm.value = norm(speed)
 
     def direction(self, speed):
-        """Set the direction of the motor based on the speed"""
+        """Bestemmer rettningen basert på hastigheten"""
 
         if speed > 0:
             self.forward.on()
@@ -49,7 +53,7 @@ class Motor:
             self.backward.on()
 
     def close(self):
-        """Call to release all resources"""
+        """Frigjør og rydder opp"""
 
         self.forward.close()
         self.backward.close()
@@ -58,7 +62,11 @@ class Motor:
 
 
 class MotorDriver:
-    """Represents the motor driver board"""
+    """
+    Representerer motor driver brettet.
+    
+    Holder styr på motorenes hastighet slik at vi ikke ødelegger dem. 
+    """
 
     def __init__(self):
         self.motora = Motor(23, 24, 25)
@@ -83,6 +91,10 @@ class MotorDriver:
         self.motorb.close()
 
 class Window(QWidget):
+    """
+    Vinduet viser informasjon om motorene og styrer motor driver brettet.
+    """
+
     def __init__(self):
         super().__init__()
 
